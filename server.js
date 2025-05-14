@@ -8,29 +8,22 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use('/uploads', express.static(uploadsDir));
-const corsOptions = {
-  origin: [
-    'https://music-uploader-next-js.vercel.app',
-    'http://localhost:3000' // For local development
-  ],
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
-
-app.use(express.json());
-
-// Ensure uploads directory exists
+// First define uploadsDir
 const uploadsDir = path.join(__dirname, 'uploads');
+
+// Then ensure directory exists
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+
 // Configure Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, uploadsDir);  // Now using the defined variable
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -68,7 +61,8 @@ app.post('/api/upload', upload.single('music'), (req, res) => {
   });
 });
 
-// Serve uploaded files
+// Serve uploaded files - now using the properly defined uploadsDir
+app.use('/uploads', express.static(uploadsDir));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
