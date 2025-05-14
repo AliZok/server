@@ -1,2 +1,2 @@
 #!/bin/bash
-npm install
+npm install dotenv express multer cors

@@ -9,7 +9,16 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use('/uploads', express.static(uploadsDir));
+const corsOptions = {
+  origin: [
+    'https://music-uploader-next-js.vercel.app',
+    'http://localhost:3000' // For local development
+  ],
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // Ensure uploads directory exists
@@ -60,7 +69,6 @@ app.post('/api/upload', upload.single('music'), (req, res) => {
 });
 
 // Serve uploaded files
-app.use('/uploads', express.static(uploadsDir));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
