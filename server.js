@@ -18,7 +18,8 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Configure Multer storage
 const storage = multer.diskStorage({
@@ -31,19 +32,21 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ 
-  storage,
+// Update Multer configuration
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 150 * 1024 * 1024, 
+    files: 1
+  },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-m4a'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only MP3/WAV files are allowed.'), false);
+      cb(new Error('Invalid file type. Only audio files are allowed.'), false);
     }
-  },
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
-  },
+  }
 });
 
 // Upload endpoint
@@ -58,6 +61,24 @@ app.post('/api/upload', upload.single('music'), (req, res) => {
     url: fileUrl,
     filename: req.file.filename,
     size: req.file.size,
+  });
+});
+
+// GET MUSICS ENDPOINT 
+app.get('/api/music', (req, res) => {
+  fs.readdir(uploadsDir, (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Unable to read music directory' });
+    }
+
+    const musicFiles = files
+      .filter(file => ['.mp3', '.wav'].includes(path.extname(file).toLowerCase()))
+      .map(file => ({
+        filename: file,
+        url: `${req.protocol}://${req.get('host')}/uploads/${file}`
+      }));
+
+    res.json(musicFiles);
   });
 });
 
